@@ -4,7 +4,7 @@ An AI-powered documentation maintenance system designed to identify potentially 
 
 The long-term goal is to build a reusable Docker-based GitHub Action that analyzes code changes, identifies affected documentation, uses a large language model to evaluate potential inconsistencies, and proposes safe documentation fixes.
 
-> **Project status:** In development. Python source analysis, Markdown parsing, basic symbol matching, documentation coverage reporting, and a Gemini client have been implemented. Git-based change detection, AI-powered stale-documentation detection, automated repairs, and GitHub Action integration are planned.
+> **Project status:** In development. Python source analysis, Markdown parsing, symbol matching, documentation coverage reporting, a Gemini client, Git-based change detection, and source-to-documentation change mapping have been implemented and tested. An integrated impact reporter is being developed. AI-powered stale-documentation detection, automated repairs, Docker packaging, and GitHub Action integration remain planned.
 
 ## Table of Contents
 
@@ -52,7 +52,7 @@ The project aims to:
 10. Package the solution as a reusable Docker-based GitHub Action.
 11. Support safe reporting or creation of a separate documentation-fix pull request.
 
-Objectives 5–11 are planned capabilities and are not yet implemented.
+Objectives 5 and 6 have partial foundational implementations: Git change detection and source-to-documentation mapping are available. AI-based staleness evaluation, automated repairs, validation, Docker packaging, and GitHub Action integration remain planned.
 
 ## How It Will Work
 
@@ -88,7 +88,7 @@ Report Findings or Propose a Separate PR
 
 The final GitHub Action is intended to run automatically when relevant source files change.
 
-The current implementation covers foundational analysis and matching components. The complete workflow above represents the intended architecture, not a fully operational pipeline.
+The current implementation covers foundational analysis, matching, Git change detection, and source-to-documentation mapping. The complete workflow above represents the intended architecture, not a fully operational pipeline.
 
 ## Technology Stack
 
@@ -101,7 +101,7 @@ The current implementation covers foundational analysis and matching components.
 | `google-genai` | Gemini Python SDK |
 | `python-dotenv` | Local environment-variable configuration |
 | `pytest` | Automated testing |
-| Git | Planned source-code change detection |
+| Git | Source-code change detection between Git references |
 | Docker | Planned portable execution environment |
 | GitHub Actions | Planned CI/CD integration |
 
@@ -195,7 +195,7 @@ The current project structure is organized as follows:
 
 ```text
 self-healing-docs/
-|-- .env
+|-- .env                         # Local secret configuration (must not be committed)
 |-- .env.example
 |-- .gitignore
 |-- README.md
@@ -213,13 +213,21 @@ self-healing-docs/
 |   |   |-- __init__.py
 |   |   `-- python_analyzer.py
 |   |
-|   |-- parsers/
+|   |-- git_tools/
 |   |   |-- __init__.py
-|   |   `-- markdown_parser.py
+|   |   `-- change_detector.py
+|   |
+|   |-- mapping/
+|   |   |-- __init__.py
+|   |   `-- change_mapper.py
 |   |
 |   |-- matching/
 |   |   |-- __init__.py
 |   |   `-- documentation_matcher.py
+|   |
+|   |-- parsers/
+|   |   |-- __init__.py
+|   |   `-- markdown_parser.py
 |   |
 |   `-- reporting/
 |       |-- __init__.py
@@ -236,7 +244,9 @@ self-healing-docs/
     |-- test_python_analyzer.py
     |-- test_markdown_parser.py
     |-- test_documentation_matcher.py
-    `-- test_coverage_report.py
+    |-- test_coverage_report.py
+    |-- test_change_detector.py
+    `-- test_change_mapper.py
 ```
 
 This reflects the files created so far; the repository may contain additional local files.
@@ -319,16 +329,19 @@ python -m pytest tests/test_python_analyzer.py -v
 python -m pytest tests/test_markdown_parser.py -v
 python -m pytest tests/test_documentation_matcher.py -v
 python -m pytest tests/test_coverage_report.py -v
+python -m pytest tests/test_change_detector.py -v
+python -m pytest tests/test_change_mapper.py -v
 ```
 
 Gemini unit tests use mocked API responses and do not require a live API call.
 
-The latest reported full test run had 17 passing tests. Run the suite locally to confirm the current result after changes.
+The latest complete test run reported **28 passing tests**. The suite covers the Gemini client (with mocked API responses), Python source analysis, Markdown parsing, symbol matching, coverage reporting, Git change detection, and change mapping. Run the suite locally to confirm the result after subsequent changes.
 
 ## Current Limitations
 
-- Git-based change detection is not implemented.
-- The system does not yet identify which symbols changed between revisions.
+- Git change detection is implemented for comparing two Git references, including added, modified, deleted, renamed, and copied files.
+- The change mapper analyzes added and modified Python files and identifies matching documentation headings and unmatched symbols.
+- The integrated impact reporter is being developed and has not yet been verified by tests.
 - Documentation matching currently relies on exact heading names.
 - Documentation coverage does not establish semantic accuracy.
 - Gemini is not yet integrated into an end-to-end stale-documentation detection pipeline.
@@ -354,17 +367,18 @@ These limitations define the next stages of development.
 
 ### Phase 2: Git Change Detection
 
-- [ ] Identify changed files between Git revisions.
-- [ ] Filter relevant source-code changes.
-- [ ] Handle added, modified, renamed, and deleted files appropriately.
-- [ ] Add tests using controlled Git repositories or fixtures.
+- [x] Identify changed files between Git revisions.
+- [x] Filter relevant Python source-code changes in the change-mapping workflow.
+- [x] Detect added, modified, deleted, renamed, and copied files in Git diff output.
+- [x] Add tests using controlled temporary Git repositories.
 
 ### Phase 3: Affected Documentation Detection
 
-- [ ] Identify affected Python symbols.
-- [ ] Map changed symbols to documentation sections.
-- [ ] Improve matching for methods, qualified names, and nested sections.
-- [ ] Report documentation sections requiring review.
+- [x] Identify Python symbols in changed source files.
+- [x] Map changed Python files to candidate Markdown documentation using symbol headings.
+- [x] Report unmatched symbols that lack a matching documentation heading.
+- [ ] Improve matching beyond exact heading names and broaden source-to-documentation relationships.
+- [ ] Integrate and verify the impact report that combines Git changes and documentation mapping.
 
 ### Phase 4: AI-Assisted Staleness Analysis
 
