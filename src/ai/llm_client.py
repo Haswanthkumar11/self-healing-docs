@@ -10,22 +10,24 @@ class GeminiClient:
     def __init__(self) -> None:
         self.client = genai.Client(
             api_key=GEMINI_API_KEY,
-            http_options=types.HttpOptions(
-                timeout=30_000
-            ),
+            http_options=types.HttpOptions(timeout=60_000),
         )
         self.model = GEMINI_MODEL
 
     def generate(self, prompt: str) -> str:
-        """Send a prompt to Gemini and return the generated text."""
-
+        """Generate text and provide a clear error if the API call fails."""
         if not prompt or not prompt.strip():
             raise ValueError("Prompt must not be empty.")
 
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
+        try:
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+            )
+        except Exception as exc:
+            raise RuntimeError(
+                f"Gemini API request failed: {exc}"
+            ) from exc
 
         if not response.text:
             raise RuntimeError("Gemini returned no text response.")

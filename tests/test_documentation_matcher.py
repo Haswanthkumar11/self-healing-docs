@@ -27,3 +27,29 @@ def test_returns_no_match_when_documentation_heading_is_missing():
 
     assert matches == []
 
+def test_matches_python_symbol_to_documentation_alias(tmp_path):
+    python_file = tmp_path / "change_detector.py"
+    markdown_file = tmp_path / "git-guide.md"
+
+    python_file.write_text(
+        "def get_changed_files():\n"
+        '    """Detect changed Git files."""\n'
+        "    return []\n",
+        encoding="utf-8",
+    )
+
+    markdown_file.write_text(
+        "# Git Change Detector\n\n"
+        "Identifies files changed between Git references.\n",
+        encoding="utf-8",
+    )
+
+    matches = match_symbols_to_documentation(
+        python_file,
+        markdown_file,
+    )
+
+    assert len(matches) == 1
+    assert matches[0]["symbol_name"] == "get_changed_files"
+    assert matches[0]["documentation_heading"] == "Git Change Detector"
+

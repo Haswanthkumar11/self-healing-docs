@@ -13,3 +13,10 @@ __pycache__/
 
 # Local vector databases
 data/chroma_db/
+
+# Generated reports
+reports/
+impact_report.json
+
+# Exploratory helper script
+list_models.py
